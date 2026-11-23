@@ -1,0 +1,873 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Интерактивная демонстрация сверки заказов и отгрузок из Excel и CSV.">
+<meta name="theme-color" content="#20271f">
+<title>Сводка — сверка заказов и отгрузок</title>
+<style>
+:root {
+  color-scheme: light;
+  --ink: #20271f;
+  --muted: #545d52;
+  --paper: #f3f4ee;
+  --line: #dce0d4;
+  --green: #d9f19c;
+  --mono: ui-monospace, Consolas, monospace;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+a { color: inherit; }
+button, input, textarea, select { font: inherit; color: inherit; border-radius: 8px; }
+button, .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 8px 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: white;
+  text-decoration: none;
+  font-weight: 650;
+  cursor: pointer;
+  transition: background .18s, border-color .18s, transform .18s;
+}
+button:hover:not(:disabled), .btn:hover { background: #eef2e6; border-color: #a8b29e; }
+button:active:not(:disabled), .btn:active { transform: translateY(1px); }
+button:disabled { opacity: .48; cursor: default; }
+:focus-visible { outline: 3px solid #628827; outline-offset: 3px; }
+.wrap { width: min(1200px, calc(100% - 64px)); margin-inline: auto; }
+.sitehead, .hero { background: var(--ink); color: #f8f9f0; }
+.nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  min-height: 76px;
+  border-bottom: 1px solid #465044;
+}
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 21px;
+  font-weight: 780;
+  letter-spacing: -.025em;
+  text-decoration: none;
+}
+.mark {
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: var(--green);
+  color: var(--ink);
+  font: 700 23px/1 var(--mono);
+}
+.navlink { font-size: 14px; text-underline-offset: 5px; }
+.hero { padding: 68px 0 110px; }
+.hero-grid { display: grid; grid-template-columns: 1.45fr 1fr; align-items: center; gap: 64px; }
+.eyebrow { color: var(--green); font: 600 13px/1.4 var(--mono); letter-spacing: .08em; text-transform: uppercase; }
+h1, h2, h3, p { margin: 0; }
+h1 { margin: 17px 0 22px; font-size: clamp(3rem, 6.8vw, 6.15rem); line-height: .99; letter-spacing: -.072em; font-weight: 690; }
+h1 span { color: var(--green); }
+.lead { max-width: 500px; color: #d5dccf; font-size: clamp(1rem, 2vw, 1.15rem); }
+.flow { border-block: 1px solid #63715b; padding: 14px 0; }
+.flow p { display: grid; grid-template-columns: 35px 1fr; align-items: center; gap: 12px; color: #dce1d7; padding: 13px 4px; }
+.flow p + p { border-top: 1px solid #465044; }
+.flow b { display: grid; place-items: center; width: 32px; height: 32px; border: 1px solid #718064; border-radius: 6px; color: var(--green); font: 700 16px/1 var(--mono); }
+.flow strong { font-weight: 550; }
+.demo { position: relative; margin-top: -54px; overflow: hidden; border: 1px solid var(--line); border-radius: 16px; background: white; box-shadow: 0 24px 50px -36px #20271f5c; }
+.bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 15px 21px; border-bottom: 1px solid var(--line); background: #fafbf7; }
+.barname { font-weight: 750; }
+.switch { display: flex; gap: 4px; padding: 4px; border: 1px solid #dce2d1; border-radius: 10px; background: #e9ede1; }
+.switch button { min-height: 36px; padding: 5px 13px; border-color: transparent; background: transparent; font-size: 14px; white-space: nowrap; }
+.switch button[aria-pressed=true] { border-color: #d5dccb; background: white; box-shadow: 0 1px 3px #27371921; }
+.panel { padding: 26px; }
+.panel.enter { animation: enter .24s ease-out both; }
+@keyframes enter { from { opacity: .55; transform: translateY(4px); } }
+.headline { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; margin-bottom: 20px; }
+.headline h2, .contact h2 { font-size: clamp(1.8rem, 3.9vw, 3.35rem); line-height: 1.05; letter-spacing: -.055em; font-weight: 710; }
+.headline p, .contact p, .note { margin-top: 7px; color: var(--muted); }
+.note { font-size: 14px; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.primary { border-color: #bad67b; background: var(--green); }
+.primary:hover:not(:disabled), .primary.btn:hover { background: #cce985; }
+.metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-bottom: 21px; border: 1px solid var(--line); border-radius: 12px; background: #f6f8f1; }
+.metric { padding: 14px 18px; overflow-wrap: anywhere; }
+.metric + .metric { border-left: 1px solid var(--line); }
+.metric strong { display: block; margin-bottom: 5px; font: 650 clamp(1.55rem, 4vw, 2.8rem)/1.1 var(--mono); letter-spacing: -.08em; }
+.metric span { font-size: 14px; color: var(--muted); }
+.files, .workbooks { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.file { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 11px; border: 1px dashed #9ea995; border-radius: 10px; background: #fafbf8; cursor: pointer; }
+.file:hover, .file.over { border-color: #658b2d; background: #eff6e1; }
+.file .symbol { flex: none; color: #466121; font: 700 20px/1 var(--mono); }
+.file span { min-width: 0; }
+.file b, .file small { display: block; overflow-wrap: anywhere; }
+.file small { color: var(--muted); font-size: 14px; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.file:focus-within { outline: 3px solid #628827; outline-offset: 2px; }
+.runline { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin: 10px 0; }
+.message { min-height: 1.5em; color: var(--muted); font-size: 14px; overflow-wrap: anywhere; }
+.error { color: #9b2d28; }
+details { margin-top: 10px; padding-bottom: 13px; border-bottom: 1px solid var(--line); }
+summary { cursor: pointer; font-size: 14px; font-weight: 650; }
+details p { margin-bottom: 10px; }
+.smallbtn { font-size: 14px; }
+.table-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin: 21px 0 10px; }
+.table-bar h3 { font-size: 18px; }
+.table-bar input, .table-bar select { min-height: 44px; padding: 8px 10px; border: 1px solid var(--line); background: white; max-width: 100%; }
+.table-bar input { width: 162px; }
+.table-bar .actions { max-width: 100%; }
+.table { overflow: auto; max-height: 390px; border: 1px solid var(--line); border-radius: 10px; }
+.table:focus-visible { outline-offset: 1px; }
+table { border-collapse: separate; border-spacing: 0; width: 100%; text-align: left; font-size: 14px; white-space: nowrap; }
+th, td { padding: 9px 12px; border-bottom: 1px solid #e8ebdf; }
+th { position: sticky; top: 0; z-index: 1; background: #edf0e6; font-size: 13px; }
+tr:last-child td { border-bottom: 0; }
+tbody tr:nth-child(even) { background: #fafbf7; }
+.num { font-family: var(--mono); text-align: right; font-variant-numeric: tabular-nums; }
+.badge { display: inline-block; padding: 2px 7px; border-radius: 5px; background: #ffebce; color: #74400b; font-size: 13px; font-weight: 650; }
+.badge.ok { background: #e6f1ca; color: #32551d; }
+.badge.check { background: #f9e4e2; color: #852b2a; }
+.sheet { min-width: 0; }
+.sheet h3 { padding: 8px 12px; border: 1px solid var(--line); border-bottom: 0; border-radius: 10px 10px 0 0; background: #e7ece0; font: 650 14px/1.5 var(--mono); }
+.sheet .table { max-height: 262px; border-radius: 0 0 10px 10px; }
+.flags td { background: #fff0d9; }
+.manual { display: grid; grid-template-columns: minmax(0, 1fr) minmax(250px, 1fr); gap: 18px; margin-top: 17px; padding: 16px; border: 1px solid var(--line); border-radius: 12px; background: #f5f6ef; }
+.manual p { margin-top: 6px; }
+.manual input { width: 120px; min-height: 44px; padding: 8px; border: 1px solid var(--line); }
+.manual form { align-self: center; }
+.manual label, .contact label { display: block; margin-bottom: 6px; font-weight: 650; }
+.contact { display: grid; grid-template-columns: 1fr minmax(260px, .65fr); gap: 34px; margin-block: 35px; padding: clamp(21px, 4.5vw, 50px); border: 1px solid #d3e0b8; border-radius: 16px; background: #e4efcc; }
+.contact p { max-width: 44ch; }
+.contact textarea { width: 100%; min-height: 86px; resize: vertical; padding: 10px; border: 1px solid #9aa884; background: #f9fcf2; }
+.contact .actions { margin-top: 8px; }
+.foot { padding-bottom: 22px; color: var(--muted); font-size: 14px; }
+[hidden] { display: none !important; }
+@media (max-width: 790px) {
+  .hero-grid { grid-template-columns: 1fr; gap: 26px; }
+  .hero { padding: 42px 0 83px; }
+  .flow { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; padding: 5px 0; }
+  .flow p + p { border-top: 0; }
+  .flow p { display: block; font-size: 14px; }
+  .flow b { margin-bottom: 6px; }
+  .demo { margin-top: -41px; }
+  .contact { grid-template-columns: 1fr; gap: 18px; }
+}
+@media (max-width: 560px) {
+  .wrap { width: calc(100% - 28px); }
+  .nav { min-height: 58px; }
+  .navlink { font-size: 13px; white-space: nowrap; }
+  .hero { padding-top: 33px; }
+  .bar { flex-direction: column; align-items: stretch; gap: 8px; padding: 10px 12px; }
+  .barname { font-size: 14px; }
+  .switch button { flex: 1; min-height: 44px; }
+  .panel { padding: 13px; }
+  .metrics { margin-bottom: 12px; }
+  .metric { padding: 9px 7px; }
+  .metric span { display: block; font-size: 12px; line-height: 1.35; }
+  .workbooks, .manual, .files { grid-template-columns: 1fr; }
+  .manual, .headline, .table-bar { gap: 10px; }
+  .headline { margin-bottom: 13px; }
+  .headline .actions button { padding-inline: 10px; }
+  .table-bar .actions { width: 100%; }
+  .table-bar input, .table-bar select { flex: 1; min-width: 0; }
+  .table { max-height: 330px; }
+  .sheet .table { max-height: 195px; }
+  .contact { margin-block: 22px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; animation: none !important; transition: none !important; }
+}
+.preview-order {display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-top:16px;padding:16px;border:1px solid #d3e0b8;border-radius:10px;background:#f1f7e4}
+.preview-order p {margin-top:4px;color:var(--muted);font-size:14px}
+@media(max-width:650px){.preview-order .btn{width:100%;text-align:center}}
+</style>
+</head>
+<body>
+<header class="sitehead" id="top">
+  <div class="wrap nav">
+    <a class="brand" href="#top"><span class="mark" aria-hidden="true">≡</span>Сводка</a>
+    <a class="navlink" href="#contact">Заказать автоматизацию</a>
+  </div>
+</header>
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <div class="eyebrow">Демонстрация автоматизации</div>
+      <h1>Две таблицы.<br><span>Одна сверка.</span></h1>
+      <p class="lead">Сопоставьте заказы и отгрузки по артикулу. Найдите расхождения, разберите дубликаты и скачайте отчёт для работы.</p>
+    </div>
+    <div class="flow" aria-label="Как работает сверка">
+      <p><b aria-hidden="true">⊞</b><strong>Заказы и отгрузки</strong></p>
+      <p><b aria-hidden="true">≋</b><strong>Сверка по заказу и артикулу</strong></p>
+      <p><b aria-hidden="true">✓</b><strong>Отчёт и список ошибок</strong></p>
+    </div>
+  </div>
+</section>
+<main class="wrap">
+  <section class="demo" aria-label="Рабочая демонстрация">
+    <div class="bar">
+      <span class="barname">Сверка заказов</span>
+      <div class="switch" role="group" aria-label="Режим демонстрации">
+        <button type="button" data-mode="before" aria-controls="before" aria-pressed="false">Как было</button>
+        <button type="button" data-mode="after" aria-controls="after" aria-pressed="true">Как стало</button>
+      </div>
+    </div>
+    <div id="before" class="panel" hidden>
+      <div class="headline">
+        <div><h2>Ручная сверка</h2><p>Найдите заказ в двух выгрузках, исключите повторы и сложите отгрузки.</p></div>
+      </div>
+      <div class="workbooks">
+        <section class="sheet">
+          <h3>заказы.xlsx</h3>
+          <div id="manual-orders" class="table" tabindex="0" aria-label="Таблица заказов"></div>
+        </section>
+        <section class="sheet">
+          <h3>отгрузки.xlsx</h3>
+          <div id="manual-shipments" class="table" tabindex="0" aria-label="Таблица отгрузок"></div>
+        </section>
+      </div>
+      <div class="manual">
+        <div>
+          <h3>Попробуйте сверить З-1042</h3>
+          <p>Найдите обе отгрузки артикула BOX-08. Сколько единиц отгрузили суммарно?</p>
+        </div>
+        <form id="manual-form">
+          <label for="answer">Итого, шт.</label>
+          <div class="actions">
+            <input id="answer" type="number" min="0" step="1" inputmode="numeric" required>
+            <button>Проверить</button>
+          </div>
+          <p id="manual-feedback" class="message" role="status"></p>
+        </form>
+      </div>
+      <p class="note">Выделенные строки требуют внимания. В примере есть повторы, ошибочное количество и незнакомые позиции.</p>
+    </div>
+    <div id="after" class="panel">
+      <div class="headline">
+        <div><h2>Результат сверки</h2><p id="dataset">Демонстрационные данные</p></div>
+        <div class="actions">
+          <button id="demo-load">Загрузить пример</button>
+          <button id="report" class="primary" disabled>Отчёт Excel</button>
+          <button id="report-csv" disabled>Отчёт CSV</button>
+        </div>
+      </div>
+      <div class="metrics" aria-label="Итоги сверки">
+        <div class="metric"><strong id="matches">—</strong><span>Совпадения</span></div>
+        <div class="metric"><strong id="mismatches">—</strong><span>Позиции к проверке</span></div>
+        <div class="metric"><strong id="issues-count">—</strong><span>Замечания к строкам</span></div>
+      </div>
+      <div class="files">
+        <label class="file" data-file="orders">
+          <input class="sr" id="orders" type="file" accept=".xlsx,.csv">
+          <span class="symbol" aria-hidden="true">+</span>
+          <span><b>Загрузить заказы</b><small id="orders-name">Excel или CSV</small></span>
+        </label>
+        <label class="file" data-file="shipments">
+          <input class="sr" id="shipments" type="file" accept=".xlsx,.csv">
+          <span class="symbol" aria-hidden="true">+</span>
+          <span><b>Загрузить отгрузки</b><small id="shipments-name">Excel или CSV</small></span>
+        </label>
+      </div>
+      <div class="runline">
+        <button id="run" disabled>Сверить файлы</button>
+        <p id="message" class="message" role="status"></p>
+      </div>
+      <details>
+        <summary>Формат файлов и тестовые выгрузки</summary>
+<p class="note">Для своих файлов показываем итоги и до 10 позиций к проверке. Полный отчёт скачивается на тестовых данных.</p>
+        <p class="note">Заказы: Заказ, Артикул, Количество. Отгрузки: Отгрузка, Заказ, Артикул, Количество. Excel — первый лист. Идентификаторы с ведущими нулями храните как текст. CSV — UTF-8, точка с запятой, запятая или табуляция. До 10 000 строк и 5 МБ на файл. Файлы обрабатываются в браузере.</p>
+        <p class="note">Одинаковые ключи в пределах одного файла считаются повторами. Отгрузки с разными номерами суммируются. При конфликте количества позиция помечается для проверки. Если в строке пропущен номер заказа или артикул, весь результат требует проверки.</p>
+        <div class="actions">
+          <button class="smallbtn" data-sample="orders" data-format="csv">Заказы · CSV</button>
+          <button class="smallbtn" data-sample="shipments" data-format="csv">Отгрузки · CSV</button>
+          <button class="smallbtn" data-sample="orders" data-format="xlsx">Заказы · Excel</button>
+          <button class="smallbtn" data-sample="shipments" data-format="xlsx">Отгрузки · Excel</button>
+        </div>
+      </details>
+      <div class="table-bar">
+        <h3 id="result-title">Сводка по позициям</h3>
+        <div class="actions">
+          <input id="query" type="search" placeholder="Заказ или артикул" aria-label="Поиск по заказу или артикулу">
+          <select id="filter" aria-label="Фильтр по статусу">
+            <option value="all">Все позиции</option>
+            <option value="review">К проверке</option>
+            <option value="match">Совпадения</option>
+          </select>
+        </div>
+      </div>
+      <div id="results" class="table" tabindex="0" aria-label="Таблица результатов"></div>
+      <div class="table-bar" id="issues-title"><h3>Замечания к исходным строкам</h3></div>
+      <div id="issues" class="table" tabindex="0" aria-label="Таблица замечаний"></div>
+<div id="preview-order" class="preview-order" hidden>
+  <div><strong>Нужна регулярная сверка?</strong><p id="preview-summary" role="status"></p></div>
+  <a id="order-setup" class="btn primary" href="#contact">Настроить сверку под мои таблицы</a>
+</div>
+    </div>
+  </section>
+  <section class="contact" id="contact">
+    <div>
+      <h2>Такая сверка нужна вашей компании?</h2>
+      <p>Опишите, откуда приходят таблицы, что нужно сопоставить и какой отчёт должен получиться. Для первого письма достаточно примера без клиентских данных.</p>
+    </div>
+    <div>
+      <label for="brief">Коротко о задаче</label>
+      <textarea id="brief" placeholder="Например, каждую неделю сверяем заказы с выгрузкой склада…"></textarea>
+      <div class="actions"><a id="email" class="btn primary" href="mailto:">Открыть письмо</a></div>
+      <p id="contact-note" class="note"></p>
+    </div>
+  </section>
+  <footer class="foot">Сводка · Интерактивный пример на вымышленных данных</footer>
+</main>
+<script>
+'use strict';
+
+const CONTACT_EMAIL = 'bauerdanila005@gmail.com';
+const SHEETJS_URL = 'https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js';
+const LIMIT = 10000;
+const SPEC = {
+  orders: ['Заказ', 'Артикул', 'Количество'],
+  shipments: ['Отгрузка', 'Заказ', 'Артикул', 'Количество']
+};
+const SAMPLE = {
+  orders: [SPEC.orders,
+    ['З-1041','LN-004',12], ['З-1041','LN-012',8], ['З-1042','BOX-08',40],
+    ['З-1043','PK-002',18], ['З-1044','LN-004',10], ['З-1045','BX-019',20],
+    ['З-1045','BX-019',20], ['З-1046','PK-002',5], ['З-1047','TG-003',16]],
+  shipments: [SPEC.shipments,
+    ['ОТ-381','З-1041','LN-004',12], ['ОТ-381','З-1041','LN-012',8],
+    ['ОТ-382','З-1042','BOX-08',15], ['ОТ-383','З-1042','BOX-08',25],
+    ['ОТ-384','З-1043','PK-002',14], ['ОТ-384','З-1043','PK-002',14],
+    ['ОТ-385','З-1045','BX-019',20], ['ОТ-386','З-1046','PK-009',5],
+    ['ОТ-387','З-1047','TG-003',19], ['ОТ-388','З-9999','BX-019',6],
+    ['ОТ-389','З-1046','PK-002','ошибка']]
+};
+
+const clean = value => String(value ?? '').trim();
+const code = value => clean(value).toUpperCase();
+const key = (...parts) => JSON.stringify(parts);
+const blank = row => row.every(value => !clean(value));
+
+function parseCsv(text, delimiter) {
+  const rows = [];
+  let row = [], field = '', mode = 'start';
+  const finishField = () => { row.push(field); field = ''; mode = 'start'; };
+  const finishRow = () => { finishField(); rows.push(row); row = []; };
+
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (mode === 'quoted') {
+      if (c !== '"') field += c;
+      else if (text[i + 1] === '"') { field += '"'; i++; }
+      else mode = 'closed';
+    } else if (c === delimiter) finishField();
+    else if (c === '\n' || c === '\r') {
+      finishRow();
+      if (c === '\r' && text[i + 1] === '\n') i++;
+    } else if (c === '"' && mode === 'start') mode = 'quoted';
+    else if (c === '"' || mode === 'closed') throw Error('Неверные кавычки в CSV.');
+    else { field += c; mode = 'plain'; }
+  }
+  if (mode === 'quoted') throw Error('Незакрытая кавычка в CSV.');
+  if (field || row.length || mode !== 'start') finishRow();
+  return rows;
+}
+
+function parseCsvFile(text, type) {
+  text = text.replace(/^\uFEFF/, '').replace(/^sep=[;,\t]\r?\n/i, '');
+  for (const delimiter of [';', ',', '\t']) {
+    try {
+      const rows = parseCsv(text, delimiter);
+      const header = rows.find(row => !blank(row));
+      if (header && SPEC[type].every(column => header.some(cell => code(cell) === code(column)))) {
+        return rows;
+      }
+    } catch {}
+  }
+  throw Error('Проверьте заголовки, разделитель и кавычки в CSV. Нужны столбцы «' + SPEC[type].join('», «') + '».');
+}
+
+function readRows(matrix, type) {
+  if (matrix.length > LIMIT + 1) throw Error('В файле больше 10 000 строк данных.');
+  const first = matrix.findIndex(row => !blank(row));
+  if (first < 0) throw Error('Таблица пуста.');
+  const header = matrix[first].map(code);
+  const indices = SPEC[type].map(name => {
+    const column = code(name);
+    if (header.indexOf(column) !== header.lastIndexOf(column)) throw Error('Повторяется столбец «' + name + '».');
+    if (!header.includes(column)) throw Error('Отсутствует столбец «' + name + '».');
+    return header.indexOf(column);
+  });
+  const entries = [], issues = [], uncertain = new Set(), duplicates = new Map();
+  let unidentified = false;
+
+  matrix.slice(first + 1).forEach((row, i) => {
+    if (blank(row)) return;
+    const values = indices.map(index => row[index]);
+    const qtyText = clean(values.pop());
+    const parts = values.map(code);
+    const [shipment, order, sku] = type === 'orders' ? ['', ...parts] : parts;
+    const source = first + i + 2;
+    const qty = /^\d+$/.test(qtyText) ? Number(qtyText) : NaN;
+    const fields = {type, order, sku, shipment, source};
+    if (!order || !sku || (type === 'shipments' && !shipment) ||
+        !Number.isSafeInteger(qty) || qty < 1 || qty > 1000000000) {
+      if (order && sku) uncertain.add(key(order, sku));
+      else unidentified = true;
+      issues.push({...fields, kind: 'Ошибка данных', detail: 'Проверьте идентификаторы и целое количество от 1 до 1 000 000 000.'});
+      return;
+    }
+    const id = type === 'orders' ? key(order, sku) : key(shipment, order, sku);
+    if (duplicates.has(id)) {
+      const original = duplicates.get(id);
+      if (original.qty !== qty) uncertain.add(key(order, sku));
+      issues.push({
+        ...fields, kind: 'Дубликат',
+        detail: original.qty === qty
+          ? 'Совпадает со строкой ' + original.source + '. Учтена первая строка.'
+          : 'Количество отличается от строки ' + original.source + '. Нужна проверка.'
+      });
+      return;
+    }
+    const entry = {...fields, qty};
+    duplicates.set(id, entry);
+    entries.push(entry);
+  });
+  return {entries, issues, uncertain, unidentified};
+}
+
+function reconcile(orders, shipments) {
+  const groups = new Map();
+  const entryGroup = (order, sku) => {
+    const id = key(order, sku);
+    if (!groups.has(id)) groups.set(id, {order, sku, planned: 0, sent: 0, orderExists: false});
+    return groups.get(id);
+  };
+  const ids = new Set();
+  for (const {order, sku, qty} of orders.entries) {
+    const group = entryGroup(order, sku);
+    group.planned += qty;
+    group.orderExists = true;
+    ids.add(order);
+  }
+  for (const {order, sku, qty} of shipments.entries) entryGroup(order, sku).sent += qty;
+
+  const issues = [...orders.issues, ...shipments.issues];
+  const rows = [...groups.values()].map(group => {
+    const {order, sku, planned, sent, orderExists} = group;
+    const delta = sent - planned;
+    const id = key(order, sku);
+    let status = 'Совпадает';
+    if (orders.uncertain.has(id) || shipments.uncertain.has(id) ||
+        orders.unidentified || shipments.unidentified) status = 'Нужна проверка';
+    else if (!orderExists) status = ids.has(order) ? 'Лишний артикул' : 'Заказ не найден';
+    else if (sent === 0) status = 'Нет отгрузки';
+    else if (delta < 0) status = 'Недостача';
+    else if (delta > 0) status = 'Излишек';
+    return {...group, delta, status};
+  });
+  return {rows, issues};
+}
+
+function toCsv(matrix) {
+  const quote = value => {
+    let cell = String(value ?? '');
+    if (typeof value === 'string' && /^\s*[=+\-@\t\r\n]/.test(cell)) cell = "'" + cell;
+    return '"' + cell.replace(/"/g, '""') + '"';
+  };
+  return '\uFEFF' + matrix.map(row => row.map(quote).join(';')).join('\r\n') + '\r\n';
+}
+
+const el = id => document.getElementById(id);
+const state = {
+  files: {orders: null, shipments: null},
+  next: {orders: 0, shipments: 0},
+  result: null,
+  pending: new Set()
+};
+const subjects = {orders: 'Заказы', shipments: 'Отгрузки'};
+const names = {orders: 'zakazy', shipments: 'otgruzki'};
+const pageLimit = 200;
+let xlsxLoading;
+
+function spreadsheet() {
+  if (window.XLSX) return Promise.resolve(window.XLSX);
+  if (!xlsxLoading) {
+    xlsxLoading = new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      const timer = setTimeout(fail, 15000);
+      function fail() {
+        clearTimeout(timer);
+        script.remove();
+        xlsxLoading = undefined;
+        reject(Error('Не удалось подключить Excel. Проверьте интернет или выберите CSV.'));
+      }
+      script.src = SHEETJS_URL;
+      script.onload = () => {
+        clearTimeout(timer);
+        if (window.XLSX) resolve(window.XLSX);
+        else fail();
+      };
+      script.onerror = fail;
+      document.head.append(script);
+    });
+  }
+  return xlsxLoading;
+}
+
+async function loadFile(file, type) {
+  if (file.size > 5 * 1024 * 1024) throw Error('Максимальный размер файла — 5 МБ.');
+  if (/\.csv$/i.test(file.name)) {
+    const bytes = await file.arrayBuffer();
+    let text;
+    try { text = new TextDecoder('utf-8', {fatal: true}).decode(bytes); }
+    catch { throw Error('Проверьте кодировку UTF-8.'); }
+    return readRows(parseCsvFile(text, type), type);
+  }
+  if (!/\.xlsx$/i.test(file.name)) throw Error('Выберите файл .xlsx или .csv.');
+  const excel = await spreadsheet();
+  let matrix;
+  try {
+    const bytes = await file.arrayBuffer();
+    const signature = new Uint8Array(bytes, 0, Math.min(bytes.byteLength, 4));
+    if (signature.join(',') !== '80,75,3,4') throw Error('Неверный формат XLSX.');
+    const book = excel.read(bytes, {type: 'array', sheets: 0, sheetRows: LIMIT + 2});
+    const sheet = book.Sheets[book.SheetNames[0]];
+    if (!sheet) throw Error('Нет листа.');
+    const range = sheet['!ref'] && excel.utils.decode_range(sheet['!ref']);
+    if (range && range.e.c > 255) throw Error('Более 256 столбцов.');
+    if (range) { range.s.r = 0; range.s.c = 0; }
+    matrix = range
+      ? excel.utils.sheet_to_json(sheet, {header: 1, raw: true, defval: '', blankrows: true, range})
+      : [];
+  } catch {
+    throw Error('Не удалось прочитать Excel. Проверьте первый лист и количество столбцов (до 256).');
+  }
+  return readRows(matrix, type);
+}
+
+function node(tag, text, className) {
+  const item = document.createElement(tag);
+  if (text !== undefined) item.textContent = text;
+  if (className) item.className = className;
+  return item;
+}
+
+function table(target, header, rows, {numeric = [], flagged = new Set(), statusColumn = -1} = {}) {
+  const grid = node('table');
+  const head = grid.createTHead().insertRow();
+  header.forEach((label, i) => {
+    const th = node('th', label, numeric.includes(i) ? 'num' : '');
+    th.scope = 'col';
+    head.append(th);
+  });
+  const body = grid.createTBody();
+  rows.slice(0, pageLimit).forEach((fields, index) => {
+    const tr = body.insertRow();
+    if (flagged.has(index)) tr.className = 'flags';
+    fields.forEach((value, i) => {
+      const td = tr.insertCell();
+      if (numeric.includes(i)) td.className = 'num';
+      if (i === statusColumn) {
+        const color = value === 'Совпадает' ? ' ok'
+          : value === 'Нужна проверка' || value === 'Ошибка данных' ? ' check' : '';
+        td.append(node('span', value, 'badge' + color));
+      } else td.textContent = value === '' ? '—' : value;
+    });
+  });
+  if (!rows.length) {
+    const td = body.insertRow().insertCell();
+    td.colSpan = header.length;
+    td.textContent = 'Нет строк для отображения.';
+  }
+  if (rows.length > pageLimit) {
+    const td = grid.createTFoot().insertRow().insertCell();
+    td.colSpan = header.length;
+    td.textContent = 'Показано ' + pageLimit + ' из ' + rows.length + '. В отчёте доступны все строки.';
+  }
+  el(target).replaceChildren(grid);
+}
+
+const reportHeader = ['Заказ', 'Артикул', 'Заказано', 'Отгружено', 'Разница', 'Статус'];
+const issueHeader = ['Файл', 'Строка', 'Заказ', 'Артикул', 'Отгрузка', 'Тип', 'Описание'];
+const rowValues = row => [row.order, row.sku, row.planned, row.sent, row.delta, row.status];
+const issueValues = row => [subjects[row.type], row.source, row.order, row.sku, row.shipment, row.kind, row.detail];
+
+function note(message = '', error = false) {
+  el('message').textContent = message;
+  el('message').classList.toggle('error', error);
+}
+
+const previewLimit = 10;
+const reportAvailable = () => state.isDemo && Boolean(state.result);
+const discrepancies = result => (result?.rows ?? []).filter(row => row.status !== 'Совпадает');
+
+function narrowResults() {
+  if (!state.isDemo) {
+    const rows = discrepancies(state.result).slice(0, previewLimit);
+    table('results', reportHeader, rows.map(rowValues), {numeric: [2, 3, 4], statusColumn: 5});
+    return;
+  }
+  const query = code(el('query').value);
+  const filter = el('filter').value;
+  const rows = state.result?.rows ?? [];
+  const filtered = rows.filter(row =>
+    (filter === 'all' || (row.status === 'Совпадает') === (filter === 'match')) &&
+    (row.order.includes(query) || row.sku.includes(query)));
+  table('results', reportHeader, filtered.map(rowValues), {numeric: [2, 3, 4], statusColumn: 5});
+}
+
+function showResult(result, dataset, isDemo = false) {
+  state.result = result;
+  state.isDemo = isDemo;
+  for (const id of ['report', 'report-csv', 'query', 'filter', 'issues-title', 'issues']) {
+    el(id).hidden = !isDemo;
+  }
+  el('result-title').textContent = isDemo ? 'Сводка по позициям' : 'Позиции к проверке';
+  el('preview-order').hidden = isDemo || !result;
+  const total = discrepancies(result).length;
+  el('preview-summary').textContent = total
+    ? 'Показано ' + Math.min(total, previewLimit) + ' из ' + total + ' позиций к проверке.'
+    : 'Позиции к проверке не найдены.';
+  el('dataset').textContent = dataset;
+  const matches = result?.rows.filter(row => row.status === 'Совпадает').length;
+  el('matches').textContent = result ? matches : '—';
+  el('mismatches').textContent = result ? result.rows.length - matches : '—';
+  el('issues-count').textContent = result ? result.issues.length : '—';
+  el('report').disabled = !reportAvailable();
+  el('report-csv').disabled = !reportAvailable();
+  el('query').value = '';
+  el('filter').value = 'all';
+  narrowResults();
+  table('issues', issueHeader, (isDemo ? result.issues : []).map(issueValues), {numeric: [1], statusColumn: 5});
+}
+
+function updateRun() {
+  el('run').disabled = Boolean(state.pending.size) || !state.files.orders || !state.files.shipments;
+}
+
+async function selectFile(file, type) {
+  if (!file) return;
+  const sequence = ++state.next[type];
+  state.files[type] = null;
+  state.pending.add(type);
+  updateRun();
+  showResult(null, 'Файлы пользователя');
+  const label = el(type + '-name');
+  label.textContent = 'Читаем ' + file.name;
+  note();
+  try {
+    const data = await loadFile(file, type);
+    if (state.next[type] !== sequence) return;
+    state.files[type] = data;
+    label.textContent = file.name + ' · ' + (data.entries.length + data.issues.length) + ' строк';
+  } catch (error) {
+    if (state.next[type] !== sequence) return;
+    label.textContent = error.message;
+    note('Загрузите исправленный файл.', true);
+  } finally {
+    if (state.next[type] === sequence) {
+      state.pending.delete(type);
+      updateRun();
+    }
+  }
+}
+
+function loadDemo() {
+  for (const type of Object.keys(SPEC)) {
+    state.next[type]++;
+    state.files[type] = null;
+    el(type).value = '';
+    el(type + '-name').textContent = 'Excel или CSV';
+  }
+  state.pending.clear();
+  updateRun();
+  showResult(demo, 'Демонстрационные данные', true);
+  note();
+}
+
+function downloadCsv(matrix, filename) {
+  const url = URL.createObjectURL(new Blob([toCsv(matrix)], {type: 'text/csv;charset=utf-8'}));
+  const anchor = node('a');
+  anchor.href = url;
+  anchor.download = filename + '.csv';
+  document.body.append(anchor);
+  anchor.click();
+  anchor.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 30000);
+}
+
+async function downloadExcel(sheets, filename) {
+  const excel = await spreadsheet();
+  const book = excel.utils.book_new();
+  for (const [title, rows] of sheets) {
+    const sheet = excel.utils.aoa_to_sheet(rows);
+    excel.utils.book_append_sheet(book, sheet, title);
+  }
+  excel.writeFile(book, filename + '.xlsx');
+}
+
+function reportSheets(result) {
+  return [
+    ['Сверка', [reportHeader, ...result.rows.map(rowValues)]],
+    ['Замечания', [issueHeader, ...result.issues.map(issueValues)]]
+  ];
+}
+
+function withDownload(action) {
+  return async event => {
+    const button = event.currentTarget;
+    button.setAttribute('aria-busy', 'true');
+    note();
+    try { await action(); }
+    catch (error) {
+      note(error.message || 'Скачать файл не удалось.', true);
+      el('message').scrollIntoView({block: 'nearest'});
+    } finally { button.removeAttribute('aria-busy'); }
+  };
+}
+
+const demo = reconcile(readRows(SAMPLE.orders, 'orders'), readRows(SAMPLE.shipments, 'shipments'));
+for (const type of Object.keys(SPEC)) {
+  const [header, ...body] = SAMPLE[type];
+  const rowHints = new Set(demo.issues.filter(issue => issue.type === type).map(issue => issue.source - 2));
+  table('manual-' + type, header, body, {numeric: [header.length - 1], flagged: rowHints});
+  el(type).addEventListener('change', event => {
+    const input = event.currentTarget;
+    selectFile(input.files[0], type);
+    input.value = '';
+  });
+}
+for (const drop of document.querySelectorAll('[data-file]')) {
+  drop.addEventListener('dragover', event => { event.preventDefault(); drop.classList.add('over'); });
+  drop.addEventListener('dragleave', () => drop.classList.remove('over'));
+  drop.addEventListener('drop', event => {
+    event.preventDefault();
+    drop.classList.remove('over');
+    const files = event.dataTransfer.files;
+    if (files.length === 1) selectFile(files[0], drop.dataset.file);
+    else note('Перетащите один файл в эту область.', true);
+  });
+}
+
+const modeButtons = document.querySelectorAll('[data-mode]');
+for (const button of modeButtons) button.addEventListener('click', () => {
+  for (const toggle of modeButtons) {
+    const selected = toggle === button;
+    const panel = el(toggle.dataset.mode);
+    toggle.setAttribute('aria-pressed', String(selected));
+    panel.hidden = !selected;
+    panel.classList.remove('enter');
+    if (selected) requestAnimationFrame(() => panel.classList.add('enter'));
+  }
+});
+el('manual-form').addEventListener('submit', event => {
+  event.preventDefault();
+  const result = demo.rows.find(row => row.order === 'З-1042' && row.sku === 'BOX-08');
+  el('manual-feedback').textContent = Number(el('answer').value) === result.sent
+    ? 'Верно. Обе отгрузки вместе покрывают заказ.'
+    : 'Проверьте обе строки заказа в таблице отгрузок.';
+});
+
+el('query').addEventListener('input', narrowResults);
+el('filter').addEventListener('change', narrowResults);
+el('demo-load').addEventListener('click', loadDemo);
+el('run').addEventListener('click', () => {
+  if (el('run').disabled) return;
+  showResult(reconcile(state.files.orders, state.files.shipments), 'Загруженные файлы');
+  note('Сверка завершена.');
+});
+el('report').addEventListener('click', withDownload(async () => {
+  if (reportAvailable()) await downloadExcel(reportSheets(state.result), 'sverka');
+}));
+el('report-csv').addEventListener('click', withDownload(() => {
+  if (!reportAvailable()) return;
+  const [rows, issues] = reportSheets(state.result);
+  downloadCsv([[rows[0]], ...rows[1], [], [issues[0]], ...issues[1]], 'sverka');
+}));
+for (const button of document.querySelectorAll('[data-sample]')) {
+  button.addEventListener('click', withDownload(async () => {
+    const {sample, format} = button.dataset;
+    if (format === 'csv') downloadCsv(SAMPLE[sample], names[sample]);
+    else await downloadExcel([[subjects[sample], SAMPLE[sample]]], names[sample]);
+  }));
+}
+
+const EMAIL_TEMPLATE = [
+  'Здравствуйте! Хочу обсудить настройку сверки.',
+  '',
+  'Откуда берём таблицы: ',
+  'Как часто нужна сверка: ',
+  'Какой отчёт нужен: '
+].join('\n');
+
+el('order-setup').addEventListener('click', () => {
+  if (!clean(el('brief').value)) el('brief').value = EMAIL_TEMPLATE;
+  prepareEmail();
+});
+
+function prepareEmail() {
+  const text = clean(el('brief').value);
+  el('email').href = 'mailto:' + CONTACT_EMAIL + '?subject=' +
+    encodeURIComponent('Автоматизация сверки и отчётности') + '&body=' +
+    encodeURIComponent(text || EMAIL_TEMPLATE);
+}
+el('contact-note').textContent = CONTACT_EMAIL || 'Демонстрация формы. Адрес получателя пока не указан.';
+el('brief').addEventListener('input', prepareEmail);
+prepareEmail();
+loadDemo();
+
+function checks() {
+  let passed = 0;
+  function equal(actual, expected) {
+    if (JSON.stringify(actual) !== JSON.stringify(expected)) throw Error(JSON.stringify({actual, expected}));
+    passed++;
+  }
+  const read = (type, rows) => readRows([SPEC[type], ...rows], type);
+  equal(demo.rows.map(row => row.status), [
+    'Совпадает', 'Совпадает', 'Совпадает', 'Недостача', 'Нет отгрузки',
+    'Совпадает', 'Нужна проверка', 'Излишек', 'Лишний артикул', 'Заказ не найден'
+  ]);
+  equal(demo.issues.map(issue => issue.kind), ['Дубликат', 'Дубликат', 'Ошибка данных']);
+  equal(demo.rows.find(row => row.order === 'З-1042').sent, 40);
+  equal(demo.rows.find(row => row.order === 'З-1043').sent, 14);
+  equal(demo.rows.find(row => row.order === 'З-1045').planned, 20);
+  equal(parseCsv('a;"b;""c""";"x\ny"\r\n1;2;3', ';'), [['a', 'b;"c"', 'x\ny'], ['1', '2', '3']]);
+  equal(parseCsvFile(toCsv(SAMPLE.orders), 'orders'), SAMPLE.orders.map(row => row.map(String)));
+  equal(parseCsvFile('Количество,Артикул,Заказ\r\n5,007,001', 'orders')[1], ['5', '007', '001']);
+  equal(toCsv([['=2+2', '@test', -4]]), '\uFEFF"\'=2+2";"\'@test";"-4"\r\n');
+  const orders = read('orders', [['001', 'abc', 8]]);
+  const shipments = read('shipments', [['s', '001', 'ABC', 8]]);
+  const conflict = read('orders', [['001', 'abc', 8], ['001', 'ABC', 9]]);
+  equal(reconcile(conflict, shipments).rows.map(row => row.status), ['Нужна проверка']);
+  equal(reconcile(orders, shipments).rows[0].status, 'Совпадает');
+  equal(reconcile(orders, read('shipments', [['s', '', 'ABC', 8]])).rows[0].status, 'Нужна проверка');
+  for (const callback of [
+    () => parseCsv('a;"ab', ';'),
+    () => readRows([['Заказ', 'Артикул', 'Заказ', 'Количество']], 'orders'),
+    () => parseCsvFile('x;y;z', 'orders')
+  ]) {
+    let threw = false;
+    try { callback(); } catch { threw = true; }
+    equal(threw, true);
+  }
+  return passed;
+}
+if (new URLSearchParams(location.search).has('test')) {
+  try { note('Проверок пройдено: ' + checks() + '.'); }
+  catch (error) { note('Проверка не пройдена: ' + error.message, true); }
+}
+</script>
+</body>
+</html>
